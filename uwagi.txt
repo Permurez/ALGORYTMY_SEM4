@@ -1,0 +1,10 @@
+robic na 5 bo niewiele wiecej pracy
+krotkie wprowadzenie
+nie drukowac sprawka
+zrobic plik do demonstracji zadan, zeby pokazac na zajeciach
+do mierzenia czasu chrono 
+dzielic na hpp i cpp
+zmienic z pragmy na ifndf 
+zbadac najgorszy przypadek
+mozna zaimplementowac strukture ta ktora zrobi sie na struktury danych,
+nie opisywac linia po lini tylko cale funkcje
