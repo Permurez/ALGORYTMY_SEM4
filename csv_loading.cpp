@@ -1,7 +1,9 @@
 #include <stdlib.h> 
 #include <stdio.h>
-#include "csv_loading.h"
+#include "csv_loading.hpp"
 #define MAX_LINE 2048 
+#define MAX_TITLE 1024
+#define MAX_RATING 32
 
 int LoadCSV(const char* filename, MovieArray* arr) {
     // Otwieramy plik 
@@ -19,18 +21,17 @@ int LoadCSV(const char* filename, MovieArray* arr) {
         return 0; // Plik pusty
     }
 
-    /
+
     while (fgets(line, MAX_LINE, file)) {
-        char titleBuf[1024];  
-        char ratingBuf[32];   
-        
+        char titleBuf[MAX_TITLE];
+        char ratingBuf[MAX_RATING];
         int i = 0; 
 
         
         while (line[i] != ',' && line[i] != '\0') {
-            i++;
+            i++;//pomijanie 1 kolumny
         }
-        if (line[i] == ',') i++; 
+        if (line[i] == ',') i++; //jeden dalej na pierwszy znak
         
         int t = 0;
         bool inQuotes = false; //zmienna czy wewnatrza

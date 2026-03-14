@@ -1,4 +1,6 @@
-#pragma oce
+#ifndef DATA_STRUCTURES_HPP
+#define DATA_STRUCTURES_HPP
+
 
 struct Movie {
     char* title; //wskaznika na pierwszy znak tytulu
@@ -16,3 +18,4 @@ void InitMovieArray(MovieArray* arr, int initialCapacity);
 void Push_back(MovieArray* arr, const char* title, float rating);
 
 void FreeAllMovieArray(MovieArray* arr);
+#endif
