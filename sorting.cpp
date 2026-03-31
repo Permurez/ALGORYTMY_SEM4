@@ -74,3 +74,14 @@ void MergeSort(MovieArray *arr, int left, int right)
     MergeSort(arr, mid + 1, right);
     Merge(arr, left, mid, right);
 }
+void InsertionSort(MovieArray* arr, int left, int right) {
+    for (int i = left + 1; i <= right; i++) {
+        Movie temp = arr->movies[i]; 
+        int j = i - 1;
+        while (j >= left && arr->movies[j].rating > temp.rating) {
+            arr->movies[j + 1] = arr->movies[j]; // przesun wiekszy w prawo
+            j--;
+        }
+        arr->movies[j + 1] = temp; 
+    }
+}
