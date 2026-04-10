@@ -76,12 +76,53 @@ void MergeSort(MovieArray *arr, int left, int right)
 }
 void InsertionSort(MovieArray* arr, int left, int right) {
     for (int i = left + 1; i <= right; i++) {
-        Movie temp = arr->movies[i]; 
-        int j = i - 1;
-        while (j >= left && arr->movies[j].rating > temp.rating) {
-            arr->movies[j + 1] = arr->movies[j]; // przesun wiekszy w prawo
-            j--;
+        int j = i; //dopoki element po  lewej jest wiekszy od obecnego zamin miejscami
+        while (j > left && arr->movies[j - 1].rating > arr->movies[j].rating) {
+            Swap(&arr->movies[j - 1], &arr->movies[j]);
+            j--; //w lewo
         }
-        arr->movies[j + 1] = temp; 
+    }
+}
+void BucketSort(MovieArray *arr, int left, int right) {
+    int numMoviesToSort = right - left + 1; //ile elementow do posortowania
+    if (numMoviesToSort <= 1) return;
+
+    // 1. Tworzymy 11 wiader (zakres ocen 0-10)
+    MovieArray buckets[11];
+    for (int i = 0; i < 11; i++) {
+        // Inicjalizacja z przewidywanym rozmiarem (numMoviesToSort / 10) // dodatkowo 10 aby unikac zbyt czestych realokacji
+        InitMovieArray(&buckets[i], (numMoviesToSort / 10) +10); //
+    }
+
+    // 2. Rozdzielanie do wiader
+    for (int i = left; i <= right; i++) {
+        int idx = (int)arr->movies[i].rating; // tutaj ucinamy czesc dziesietna rzutowaniem
+        if (idx < 0) idx = 0; 
+        if (idx > 10) idx = 10;
+        
+        // Przenosimy dane do odpowiedniego kubełka
+        Push_back(&buckets[idx], arr->movies[i].title, arr->movies[i].rating);//kopiujemy tytul i ocene do odpowiedniego kubla
+    }//(kazdy z kublow trzyma zakres ocen 0-1, 1-2, ..., 9-10)
+
+
+    int currentPos = left; 
+    for (int i = 0; i < 11; i++) { // petla po wszystkich kublach
+        if (buckets[i].size > 0) {//czy cokolwiek jest w kuble
+    
+            InsertionSort(&buckets[i], 0, buckets[i].size - 1);//sortowanie kazdego kubla z osobna insertion sortem 
+            for (int j = 0; j < buckets[i].size; j++) {
+    
+                delete[] arr->movies[currentPos].title;
+                
+                // Przypisanie wskaznikow z kubla do oryginalnej tablicy
+                arr->movies[currentPos].title = buckets[i].movies[j].title; 
+                arr->movies[currentPos].rating = buckets[i].movies[j].rating;
+                //czyli wpisujemy adres tytulu z kubla do oryginalnej tablicy,
+                
+                buckets[i].movies[j].title = nullptr; // a potem ustawiamy wskaznik w kuble na nullptr
+                currentPos++;
+            }
+        }
+        FreeAllMovieArray(&buckets[i]); // Sprzątanie struktury kubełka
     }
 }

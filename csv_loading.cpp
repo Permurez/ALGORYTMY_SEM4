@@ -6,7 +6,6 @@
 #define MAX_RATING 32
 
 int LoadCSV(const char* filename, MovieArray* arr) {
-    // Otwieramy plik 
     FILE* file = fopen(filename, "r");
     if (!file) {
         printf("BLAD , nie udalo sie otworzyc pliku %s\n", filename);
@@ -18,69 +17,57 @@ int LoadCSV(const char* filename, MovieArray* arr) {
 
     if (fgets(line, MAX_LINE, file) == NULL) {
         fclose(file);
-        return 0; // Plik pusty
+        return 0;
     }
-
 
     while (fgets(line, MAX_LINE, file)) {
         char titleBuf[MAX_TITLE];
         char ratingBuf[MAX_RATING];
-        int i = 0; 
+        int i = 0;
+        int titleLength = 0;
+        int ratingLength = 0;
 
-        
-        while (line[i] != ',' && line[i] != '\0') {
-            i++;//pomijanie 1 kolumny
-        }
-        if (line[i] == ',') i++; //jeden dalej na pierwszy znak
-        
-        int t = 0;
-        bool inQuotes = false; //zmienna czy wewnatrza
+        while (line[i] != '\0' && line[i] != ',' && line[i] != '\n' && line[i] != '\r')
+            i++;
+        if (line[i] == ',')
+            i++;
 
-        
         if (line[i] == '"') {
-            inQuotes = true;
-            i++; 
-        }
-
-        while (line[i] != '\0' && line[i] != '\n' && line[i] != '\r') {
-            if (inQuotes) {
-              
+            i++;
+            while (line[i] != '\0' && line[i] != '\n' && line[i] != '\r') {
                 if (line[i] == '"') {
-                    inQuotes = false; 
                     i++;
-                   
-                    while (line[i] != ',' && line[i] != '\0' && line[i] != '\n') i++;
                     break;
-                } else {
-                    titleBuf[t++] = line[i++];
                 }
-            } else {
-                
-                if (line[i] == ',') {
-                    break; 
-                } else {
-                    titleBuf[t++] = line[i++];
-                }
+                if (titleLength < MAX_TITLE - 1)
+                    titleBuf[titleLength++] = line[i];
+                i++;
+            }
+            while (line[i] != '\0' && line[i] != ',' && line[i] != '\n' && line[i] != '\r')
+                i++;
+        } else {
+            while (line[i] != '\0' && line[i] != ',' && line[i] != '\n' && line[i] != '\r') {
+                if (titleLength < MAX_TITLE - 1)
+                    titleBuf[titleLength++] = line[i];
+                i++;
             }
         }
-        titleBuf[t] = '\0';
-        if (line[i] == ',') i++; 
+        titleBuf[titleLength] = '\0';
+        if (line[i] == ',')
+            i++;
 
-        // wczytywanie i sprawdzanie pustych
-        int r = 0;
-        bool isEmpty = true; 
-        
-        while (line[i] != '\0' && line[i] != '\n' && line[i] != '\r') {
-            
-            if (line[i] != ' ' && line[i] != ',') {
-                isEmpty = false; 
-            }
-            ratingBuf[r++] = line[i++];
+        while (line[i] == ' ' || line[i] == '\t')
+            i++;
+        while (line[i] != '\0' && line[i] != ',' && line[i] != '\n' && line[i] != '\r') {
+            if (ratingLength < MAX_RATING - 1)
+                ratingBuf[ratingLength++] = line[i];
+            i++;
         }
-        ratingBuf[r] = '\0'; 
+        while (ratingLength > 0 && (ratingBuf[ratingLength - 1] == ' ' || ratingBuf[ratingLength - 1] == '\t'))
+            ratingLength--;
+        ratingBuf[ratingLength] = '\0';
 
-        // Zapis do tablicy
-        if (!isEmpty) {
+        if (ratingLength > 0) {
             float rating = (float)atof(ratingBuf); 
             Push_back(arr, titleBuf, rating);
             loadedCount++;
