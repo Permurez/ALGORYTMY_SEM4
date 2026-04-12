@@ -7,6 +7,7 @@ void Swap(Movie *a, Movie *b)//zmiana miejscami dwoch elementow
     *a = *b;
     *b = temp;
 }
+
 int Partition(MovieArray *arr, int left, int right)
 {
     int mid = left + (right - left) / 2;
@@ -24,18 +25,32 @@ int Partition(MovieArray *arr, int left, int right)
     Swap(&arr->movies[i + 1], &arr->movies[right]);
     return i + 1; //index pivota
 }
-void QuickSort(MovieArray *arr, int left, int right)
+
+int PartitionForWorstQuickSort(MovieArray *arr, int left, int right)
 {
-    if (left >=right) return;
-    int pivotIndex = Partition(arr, left, right);
-    QuickSort(arr, left, pivotIndex - 1); // rekurencja po obu stronach pivota
-    QuickSort(arr, pivotIndex + 1, right);
+    // Osobna wersja tylko do testu najgorszego przypadku QuickSort.
+    // Bierzemy pierwszy element jako pivot, zeby dla danych juz posortowanych
+    // QuickSort mial faktycznie najgorszy przypadek.
+    float pivot = arr->movies[left].rating;
+    Swap(&arr->movies[left], &arr->movies[right]);//pivot na koniec
+    int i = left - 1;
+    for (int j = left; j < right; j++)
+    {
+        if (arr->movies[j].rating <= pivot)
+        {
+            i++;
+            Swap(&arr->movies[i], &arr->movies[j]);
+        }
+    }
+    Swap(&arr->movies[i + 1], &arr->movies[right]);
+    return i + 1;
 }
+
 void Merge(MovieArray *arr, int left, int mid, int right)
 {
     int lenLeft = mid - left + 1;
     int lenRight = right - mid;
-    
+
     Movie* tmpLeft = new Movie[lenLeft];
     Movie* tmpRight = new Movie[lenRight];
     for (int i = 0; i < lenLeft; i++)
@@ -56,13 +71,12 @@ void Merge(MovieArray *arr, int left, int mid, int right)
         else
             arr->movies[k++] = tmpRight[j++];
     }
-    while (i < lenLeft)
-        arr->movies[k++] = tmpLeft[i++];
-    while (j < lenRight)
-        arr->movies[k++] = tmpRight[j++];
+    while (i < lenLeft) arr->movies[k++] = tmpLeft[i++];
+    while (j < lenRight)arr->movies[k++] = tmpRight[j++];
     delete[] tmpLeft;
     delete[] tmpRight;
 }
+
 void MergeSort(MovieArray *arr, int left, int right)
 {
     if (left >= right)
@@ -74,6 +88,7 @@ void MergeSort(MovieArray *arr, int left, int right)
     MergeSort(arr, mid + 1, right);
     Merge(arr, left, mid, right);
 }
+
 void InsertionSort(MovieArray* arr, int left, int right) {
     for (int i = left + 1; i <= right; i++) {
         int j = i; //dopoki element po  lewej jest wiekszy od obecnego zamin miejscami
@@ -83,6 +98,39 @@ void InsertionSort(MovieArray* arr, int left, int right) {
         }
     }
 }
+
+void QuickSort(MovieArray* arr, int left, int right)
+{
+    // petla zastępuje drugą rekurencję — nie tworzy nowej ramki stosu 
+    while (left < right) //to nie powoduje stack overflow 
+    {
+        int pivotIndex = Partition(arr, left, right);
+
+        if (pivotIndex - left < right - pivotIndex)
+        {
+            // lewa czesc jest mniejsza — schodzimy w nia rekurencyjnie
+            QuickSort(arr, left, pivotIndex - 1);
+            left = pivotIndex + 1;
+        }
+        else
+        {
+            QuickSort(arr, pivotIndex + 1, right);
+            right = pivotIndex - 1;
+        }
+    }
+    // rekurencja zawsze idzie w czesc mniejsza, wiec stos sie nie przepelni
+}
+
+void QuickSortWorst(MovieArray* arr, int left, int right)
+{
+    if (left >= right)
+        return;
+
+    int pivotIndex = PartitionForWorstQuickSort(arr, left, right);
+    QuickSortWorst(arr, left, pivotIndex - 1);
+    QuickSortWorst(arr, pivotIndex + 1, right);
+}
+
 void BucketSort(MovieArray *arr, int left, int right) {
     int numMoviesToSort = right - left + 1; //ile elementow do posortowania
     if (numMoviesToSort <= 1) return;
@@ -102,7 +150,7 @@ void BucketSort(MovieArray *arr, int left, int right) {
         
         // Przenosimy dane do odpowiedniego kubełka
         Push_back(&buckets[idx], arr->movies[i].title, arr->movies[i].rating);//kopiujemy tytul i ocene do odpowiedniego kubla
-    }//(kazdy z kublow trzyma zakres ocen 0-1, 1-2, ..., 9-10)
+    }//kazdy trzyma 0-1, 1-2, 10 trzyma tylko 10
 
 
     int currentPos = left; 
@@ -111,18 +159,21 @@ void BucketSort(MovieArray *arr, int left, int right) {
     
             InsertionSort(&buckets[i], 0, buckets[i].size - 1);//sortowanie kazdego kubla z osobna insertion sortem 
             for (int j = 0; j < buckets[i].size; j++) {
-    
                 delete[] arr->movies[currentPos].title;
-                
                 // Przypisanie wskaznikow z kubla do oryginalnej tablicy
                 arr->movies[currentPos].title = buckets[i].movies[j].title; 
                 arr->movies[currentPos].rating = buckets[i].movies[j].rating;
-                //czyli wpisujemy adres tytulu z kubla do oryginalnej tablicy,
-                
-                buckets[i].movies[j].title = nullptr; // a potem ustawiamy wskaznik w kuble na nullptr
+                buckets[i].movies[j].title = nullptr;
                 currentPos++;
             }
         }
         FreeAllMovieArray(&buckets[i]); // Sprzątanie struktury kubełka
     }
+}
+// sprawdzenie czy tablica jest posortowana rosnaco (lewo=min prawo=max)
+bool IsSorted(const MovieArray* arr) {
+    for (int i = 0; i < arr->size - 1; i++)
+        if (arr->movies[i].rating > arr->movies[i + 1].rating)
+            return false;
+    return true;
 }

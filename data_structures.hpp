@@ -17,5 +17,7 @@ void InitMovieArray(MovieArray* arr, int initialCapacity);
 
 void Push_back(MovieArray* arr, const char* title, float rating);
 
+void CopyMovieArray(const MovieArray* source, MovieArray* destination);
+
 void FreeAllMovieArray(MovieArray* arr);
 #endif
