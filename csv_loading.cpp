@@ -1,79 +1,101 @@
-#include <stdlib.h> 
+#include <stdlib.h>
 #include <stdio.h>
 #include "csv_loading.hpp"
-#define MAX_LINE 2048 
-#define MAX_TITLE 1024
-#define MAX_RATING 32
 
-int LoadCSV(const char* filename, MovieArray* arr) {
-    FILE* file = fopen(filename, "r");
-    if (!file) {
-        printf("BLAD , nie udalo sie otworzyc pliku %s\n", filename);
+#define MAKS_LINIA 2048
+
+static void UtnijKoniecLinii(char* tekst)
+{
+    int i = 0;
+    while (tekst[i] != '\0') {
+        if (tekst[i] == '\r' || tekst[i] == '\n') {
+            tekst[i] = '\0';
+            return;
+        }
+        i++;
+    }
+}
+
+static char* ZnajdzPierwszyZnak(char* tekst, char znak)
+{
+    int i = 0;
+    while (tekst[i] != '\0') {
+        if (tekst[i] == znak) {
+            return &tekst[i];
+        }
+        i++;
+    }
+    return NULL;
+}
+
+static char* ZnajdzOstatniZnak(char* tekst, char znak)
+{
+    char* ostatni = NULL;
+    int i = 0;
+    while (tekst[i] != '\0') {
+        if (tekst[i] == znak) {
+            ostatni = &tekst[i];
+        }
+        i++;
+    }
+    return ostatni;
+}
+
+int LoadCSV(const char* nazwaPliku, MovieArray* tablicaFilmow) {
+    FILE* plik = fopen(nazwaPliku, "r");
+    if (!plik) {
+        printf("BLAD , nie udalo sie otworzyc pliku %s\n", nazwaPliku);
         return 0;
     }
 
-    char line[MAX_LINE];
-    int loadedCount = 0;
+    char linia[MAKS_LINIA];
+    int wczytaneRekordy = 0;
 
-    if (fgets(line, MAX_LINE, file) == NULL) {
-        fclose(file);
+   
+    if (fgets(linia, MAKS_LINIA, plik) == NULL) {
+        fclose(plik);
         return 0;
     }
 
-    while (fgets(line, MAX_LINE, file)) {
-        char titleBuf[MAX_TITLE];
-        char ratingBuf[MAX_RATING];
-        int i = 0;
-        int titleLength = 0;
-        int ratingLength = 0;
+    while (fgets(linia, MAKS_LINIA, plik)) {
+        // Usuwamy koniec linii, zeby latwiej dzielic rekord.
+        UtnijKoniecLinii(linia);
 
-        while (line[i] != '\0' && line[i] != ',' && line[i] != '\n' && line[i] != '\r')
-            i++;
-        if (line[i] == ',')
-            i++;
+        char* pierwszyPrzecinek = ZnajdzPierwszyZnak(linia, ',');
+        if (!pierwszyPrzecinek) {
+            continue;
+        }
+        char* poczatekTytulu = pierwszyPrzecinek + 1;
 
-        if (line[i] == '"') {
-            i++;
-            while (line[i] != '\0' && line[i] != '\n' && line[i] != '\r') {
-                if (line[i] == '"') {
-                    i++;
-                    break;
-                }
-                if (titleLength < MAX_TITLE - 1)
-                    titleBuf[titleLength++] = line[i];
-                i++;
+
+        char* ostatniPrzecinek = ZnajdzOstatniZnak(linia, ',');
+        if (!ostatniPrzecinek || ostatniPrzecinek == pierwszyPrzecinek) {
+            continue;
+        }
+        *ostatniPrzecinek = '\0';
+        char* tekstOceny = ostatniPrzecinek + 1;
+
+        // 4. Jesli tytul jest w cudzyslowie, obcinamy cudzyslowy z obu stron.
+        if (*poczatekTytulu == '"') {
+            poczatekTytulu++;
+            char* zamykajacyCudzyslow = ZnajdzOstatniZnak(poczatekTytulu, '"');
+            if (!zamykajacyCudzyslow) {
+                continue;
             }
-            while (line[i] != '\0' && line[i] != ',' && line[i] != '\n' && line[i] != '\r')
-                i++;
-        } else {
-            while (line[i] != '\0' && line[i] != ',' && line[i] != '\n' && line[i] != '\r') {
-                if (titleLength < MAX_TITLE - 1)
-                    titleBuf[titleLength++] = line[i];
-                i++;
-            }
+            *zamykajacyCudzyslow = '\0';
         }
-        titleBuf[titleLength] = '\0';
-        if (line[i] == ',')
-            i++;
 
-        while (line[i] == ' ' || line[i] == '\t')
-            i++;
-        while (line[i] != '\0' && line[i] != ',' && line[i] != '\n' && line[i] != '\r') {
-            if (ratingLength < MAX_RATING - 1)
-                ratingBuf[ratingLength++] = line[i];
-            i++;
+        // 5. Parsowanie oceny; odrzucamy puste i nieliczbowe wartosci.
+        char* koniecLiczby = NULL;
+        float ocena = strtof(tekstOceny, &koniecLiczby);
+        if (koniecLiczby == tekstOceny) {
+            continue;
         }
-        while (ratingLength > 0 && (ratingBuf[ratingLength - 1] == ' ' || ratingBuf[ratingLength - 1] == '\t'))
-            ratingLength--;
-        ratingBuf[ratingLength] = '\0';
 
-        if (ratingLength > 0) {
-            float rating = (float)atof(ratingBuf); 
-            Push_back(arr, titleBuf, rating);
-            loadedCount++;
-        }
+        Push_back(tablicaFilmow, poczatekTytulu, ocena);
+        wczytaneRekordy++;
     }
 
-    fclose(file); 
-    return loadedCount;
+    fclose(plik);
+    return wczytaneRekordy;
 }

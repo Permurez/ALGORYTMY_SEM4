@@ -1,5 +1,4 @@
 #include "sorting.hpp"
-#include <stdlib.h>
 
 void Swap(Movie *a, Movie *b)//zmiana miejscami dwoch elementow
 {
@@ -123,38 +122,50 @@ void QuickSort(MovieArray* arr, int left, int right)
 
 void QuickSortWorst(MovieArray* arr, int left, int right)
 {
-    if (left >= right)
-        return;
+    // Zostawiamy "zly" pivot (pierwszy element), wiec czas nadal odpowiada
+    // teoretycznemu worst-case O(n^2) dla danych posortowanych.
+    // Zmieniamy tylko sposob schodzenia po podproblemach, by nie przepelniac stosu.
+    while (left < right)
+    {
+        int pivotIndex = PartitionForWorstQuickSort(arr, left, right);
 
-    int pivotIndex = PartitionForWorstQuickSort(arr, left, right);
-    QuickSortWorst(arr, left, pivotIndex - 1);
-    QuickSortWorst(arr, pivotIndex + 1, right);
+        if (pivotIndex - left < right - pivotIndex)
+        {
+            QuickSortWorst(arr, left, pivotIndex - 1);
+            left = pivotIndex + 1;
+        }
+        else
+        {
+            QuickSortWorst(arr, pivotIndex + 1, right);
+            right = pivotIndex - 1;
+        }
+    }
 }
 
 void BucketSort(MovieArray *arr, int left, int right) {
     int numMoviesToSort = right - left + 1; //ile elementow do posortowania
     if (numMoviesToSort <= 1) return;
 
-    // 1. Tworzymy 11 wiader (zakres ocen 0-10)
-    MovieArray buckets[11];
-    for (int i = 0; i < 11; i++) {
-        // Inicjalizacja z przewidywanym rozmiarem (numMoviesToSort / 10) // dodatkowo 10 aby unikac zbyt czestych realokacji
-        InitMovieArray(&buckets[i], (numMoviesToSort / 10) +10); //
+    // 1. Tworzymy 101 wiader (0.0, 0.1, ..., 10.0)
+    MovieArray buckets[101];
+    for (int i = 0; i < 101; i++) {
+        // Wieksza liczba kubelkow zmniejsza rozmiar kazdego kubelka.
+        InitMovieArray(&buckets[i], (numMoviesToSort / 101) + 10);
     }
 
     // 2. Rozdzielanie do wiader
     for (int i = left; i <= right; i++) {
-        int idx = (int)arr->movies[i].rating; // tutaj ucinamy czesc dziesietna rzutowaniem
+        int idx = (int)(arr->movies[i].rating * 10.0f + 0.0001f);
         if (idx < 0) idx = 0; 
-        if (idx > 10) idx = 10;
+        if (idx >= 101) idx = 100;
         
         // Przenosimy dane do odpowiedniego kubełka
         Push_back(&buckets[idx], arr->movies[i].title, arr->movies[i].rating);//kopiujemy tytul i ocene do odpowiedniego kubla
-    }//kazdy trzyma 0-1, 1-2, 10 trzyma tylko 10
+    }
 
 
     int currentPos = left; 
-    for (int i = 0; i < 11; i++) { // petla po wszystkich kublach
+    for (int i = 0; i < 101; i++) { // petla po wszystkich kublach
         if (buckets[i].size > 0) {//czy cokolwiek jest w kuble
     
             InsertionSort(&buckets[i], 0, buckets[i].size - 1);//sortowanie kazdego kubla z osobna insertion sortem 
