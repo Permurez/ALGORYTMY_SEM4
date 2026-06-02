@@ -1,0 +1,26 @@
+# Build directories
+/build/
+/build-mingw/
+
+# Executables and objects
+*.exe
+*.obj
+*.o
+*.pdb
+*.log
+
+# CMake files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# IDE / editor
+.vscode/
+.vs/
+*.user
+*.suo
+
+# Misc
+*.tmp
+*.swp
