@@ -11,7 +11,7 @@ Board::Board(int size, int winLen)
 {}
 
 // ─── Operacje na planszy ──────────────────────────────────────────────────────
-bool Board::place(int row, int col, Cell player) {
+bool Board::place(int row, int col, Cell player) {//ustawia znak gracza na polu; zwraca false jesli pole zajete lub poza plansza
     if (row < 0 || row >= m_size || col < 0 || col >= m_size) return false;
     if (m_grid[row][col] != Cell::Empty) return false;
     m_grid[row][col] = player;
@@ -19,20 +19,20 @@ bool Board::place(int row, int col, Cell player) {
     return true;
 }
 
-void Board::undo(int row, int col) {
+void Board::undo(int row, int col) {//potrzbena cofnienie ruchu przez algorytm minimax
     if (m_grid[row][col] != Cell::Empty) {
         m_grid[row][col] = Cell::Empty;
         --m_moveCount;
     }
 }
 
-bool Board::isFull()                  const { return m_moveCount >= m_size * m_size; }
-bool Board::isEmpty(int row, int col) const { return m_grid[row][col] == Cell::Empty; }
+bool Board::isFull()                  const { return m_moveCount >= m_size * m_size; }//uzywane przy sprawdzaniu czy plansza jest pelna
+bool Board::isEmpty(int row, int col) const { return m_grid[row][col] == Cell::Empty; }//uzywane przy sprawdzaniu czy pole jest puste
 Cell Board::get(int row, int col)     const { return m_grid[row][col]; }
 
 //Sprawdzanie wygranej 
 // Sprawdza 4 kierunki od pola (row,col): poziom, pion, ukos \, ukos /
-bool Board::checkWin(int row, int col, Cell player) const {
+bool Board::checkWin(int row, int col, Cell player) const {//sprawdza czy ruch na (row,col) daje wygrana dla 'gracza
     const int dr[] = {0, 1, 1,  1};
     const int dc[] = {1, 0, 1, -1};
 
@@ -57,7 +57,7 @@ bool Board::checkWin(int row, int col, Cell player) const {
     return false;
 }
 
-GameState Board::checkState() const {
+GameState Board::checkState() const {//sprawdza czy ktos wygral lub remis
     for (int r = 0; r < m_size; ++r)
         for (int c = 0; c < m_size; ++c) {
             Cell cell = m_grid[r][c];
@@ -70,7 +70,7 @@ GameState Board::checkState() const {
 }
 
 // Zwraca informacje o zwycieskiej linii (start i koniec)
-std::optional<WinInfo> Board::getWinInfo() const {
+std::optional<WinInfo> Board::getWinInfo() const {//sprawdza czy ktos wygral i zwraca informacje o zwycieskiej linii (start i koniec)
     const int dr[] = {0, 1, 1,  1};
     const int dc[] = {1, 0, 1, -1};
 
@@ -96,12 +96,12 @@ std::optional<WinInfo> Board::getWinInfo() const {
     return std::nullopt;
 }
 
-// ─── Heurystyka ───────────────────────────────────────────────────────────────
+
 // Ocenia ciag znakow tego samego gracza:
-//   count      - dlugosc ciagu
-//   openEnds   - ile konców ciagu jest otwartych (0, 1 lub 2)
-// Wynik jest dodatni dla maximizera, ujemny dla przeciwnika
-int Board::evalLine(int count, int openEnds, Cell player, Cell maximizer) const {
+// count-dlugosc ciagu
+// openEnds-ile konców ciagu jest otwartych (0, 1 lub 2)
+// Wynik jest dodatni dla maximizera, ujemny dla przeciwnika, maximizerem jest SI
+int Board::evalLine(int count, int openEnds, Cell player, Cell maximizer) const {//ocenia pojedynczy ciag znakow (ilosc + otwarte konce)
     if (count == 0 || openEnds == 0) return 0;
 
     int score = 0;
@@ -169,20 +169,14 @@ int Board::heuristicScore(Cell maximizer) const {
 // Zamiast analizowac cala plansze, bierzemy tylko pola w poblizu istniejacych
 // znakow — znacznie zmniejsza to liczbe wezlow w drzewie minimax.
 std::vector<std::pair<int,int>> Board::candidateMoves() const {
-    // Pierwszy ruch: srodek planszy
     if (m_moveCount == 0)
         return {{m_size / 2, m_size / 2}};
 
     const int RADIUS = 2;
-    
-    // Zamiast std::vector<std::vector<bool>> alokujemy płaską tablicę na stosie.
-    // Max plansza to 15x15 = 225, dajemy 256 dla bezpieczeństwa.
-    // Inicjalizacja {false} zeruje całą tablicę 
-    bool seen[256] = {false};
-    
+
+    std::vector<bool> seen(m_size * m_size, false);
     std::vector<std::pair<int,int>> moves;
-    // rezerwujemy od razu pamięćna wektor ruchów, 
-    moves.reserve(64); 
+    moves.reserve(64);
 
     for (int r = 0; r < m_size; ++r) {
         for (int c = 0; c < m_size; ++c) {
@@ -193,16 +187,16 @@ std::vector<std::pair<int,int>> Board::candidateMoves() const {
                     int nr = r + dr, nc = c + dc;
                     if (nr < 0 || nr >= m_size || nc < 0 || nc >= m_size) continue;
                     if (m_grid[nr][nc] != Cell::Empty) continue;
-                    
-                    // Spłaszczamy indeksowanie 2D do 1D
+
                     int flatIndex = nr * m_size + nc;
                     if (seen[flatIndex]) continue;
-                    
+
                     seen[flatIndex] = true;
                     moves.push_back({nr, nc});
                 }
             }
         }
     }
+    if (moves.size() > 20) moves.resize(20);
     return moves;
 }

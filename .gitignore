@@ -1,0 +1,4 @@
+# Auto-generated gitignore
+Projekt_3_Minigra/build/
+Projekt_3_Minigra/build-mingw/
+Projekt_3_Minigra/*.obj

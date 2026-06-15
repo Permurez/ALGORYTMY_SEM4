@@ -2,11 +2,11 @@
 #include "Board.h"
 #include "SI.h"
 #include <memory>
+#include <thread>
+#include <atomic>
 
-// Tryby gry
 enum class GameMode { HumanVsHuman, HumanVsAI };
 
-// Konfiguracja rozgrywki (wybierana w menu)
 struct GameConfig {
     int      boardSize = 3;
     int      winLen    = 3;
@@ -17,24 +17,20 @@ struct GameConfig {
 class Game {
 public:
     explicit Game(GameConfig cfg);
+    ~Game();
 
-    // Obsluga ruchu gracza (klikniecie w pole)
     void handleMove(int row, int col);
-
-    // Wywolywane co klatkE gdy jest tura AI
     void triggerAIMove();
-
-    // Resetuje plansze, zachowuje wyniki
     void reset();
 
-    // Gettery
-    const Board& board()       const { return m_board; }
-    GameState    state()       const { return m_state; }
-    Cell         currentTurn() const { return m_turn; }
-    bool         isAITurn()    const;
-    GameConfig   config()      const { return m_cfg; }
-    int          scoreX()      const { return m_scoreX; }
-    int          scoreO()      const { return m_scoreO; }
+    const Board& board()        const { return m_board; }
+    GameState    state()        const { return m_state; }
+    Cell         currentTurn()  const { return m_turn; }
+    bool         isAITurn()     const;
+    bool         isAIThinking() const { return m_aiThinking; }
+    GameConfig   config()       const { return m_cfg; }
+    int          scoreX()       const { return m_scoreX; }
+    int          scoreO()       const { return m_scoreO; }
 
 private:
     GameConfig           m_cfg;
@@ -44,6 +40,9 @@ private:
     int                  m_scoreX = 0;
     int                  m_scoreO = 0;
     std::unique_ptr<AI>  m_ai;
+
+    std::thread          m_aiThread;
+    std::atomic<bool>    m_aiThinking{false};
 
     void afterMove(int row, int col);
     void switchTurn();

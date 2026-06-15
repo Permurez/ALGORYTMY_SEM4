@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <filesystem>
 
-// ─────────────────────────────────────────────────────────────────────────────
+
 Menu::Menu(sf::RenderWindow& window) : m_window(window) {
     const std::array<const char*, 4> fontPaths = {
         "assets/font.ttf",
@@ -23,7 +23,7 @@ Menu::Menu(sf::RenderWindow& window) : m_window(window) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+
 GameConfig Menu::run() {
     m_done = false;
     m_selectedOption = 0;
@@ -53,7 +53,7 @@ GameConfig Menu::run() {
     return cfg;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+
 void Menu::handleEvent(const sf::Event& event) {
     const auto* keyPressed = event.getIf<sf::Event::KeyPressed>();
     if (!keyPressed) return;
@@ -80,7 +80,7 @@ void Menu::handleEvent(const sf::Event& event) {
             break;
         case sf::Keyboard::Key::Right:
             switch (m_selectedOption) {
-                case 0: m_boardSize = std::min(15, m_boardSize + 1); break;
+                case 0: m_boardSize = std::min(10, m_boardSize + 1); break;
                 case 1: m_winLen    = std::min(m_boardSize, m_winLen + 1); break;
                 case 2: m_modeIndex  = (m_modeIndex + 1) % 2; break;
                 case 3: m_depthIndex = std::min(2, m_depthIndex + 1); break;
@@ -157,18 +157,21 @@ void Menu::drawOption(const std::string& label, const std::string& value,
 }
 
 void Menu::drawInstructions() {
-    float y = m_window.getSize().y - 100.f;
-    const std::array<std::string, 3> lines = {
-        "↑ ↓  Wybierz opcje     ← →  Zmien wartosc",
-        "Enter / Spacja  Rozpocznij gre",
-        "Esc  Powrot do menu     R  Restart rundy"
+    float y = m_window.getSize().y - 180.f; // Podniosłem tekst wyżej, żeby się zmieścił
+    const std::vector<std::string> lines = {
+        "^ | Wybierz opcje  <-> Zmien wartosc",
+        "Enter / Spacja: Rozpocznij gre",
+        "Esc: Powrot do menu    R: Restart rundy",
+        "B: Benchmark ",
+        "N: Nowa gra "
     };
 
-    for (int i = 0; i < 3; ++i) {
+    for (size_t i = 0; i < lines.size(); ++i) {
         sf::Text t(m_font, lines[i], 16);
         t.setFillColor(sf::Color(90, 90, 110));
         auto b = t.getLocalBounds();
-        t.setPosition({(m_window.getSize().x - b.size.x) / 2.f, y + i * 24.f});
+        // Wyśrodkowanie tekstu i odstęp 25 pikseli między liniami
+        t.setPosition({(m_window.getSize().x - b.size.x) / 2.f, y + i * 25.f});
         m_window.draw(t);
     }
 }

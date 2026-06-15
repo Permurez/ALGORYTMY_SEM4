@@ -2,7 +2,7 @@
 #include <array>
 #include <filesystem>
 
-GUI::GUI(Game& game, sf::RenderWindow& window)
+GUI::GUI(Game& game, sf::RenderWindow& window)//konstruktor, inicjalizuje GUI z referencja do gry i okna
     : m_game(game), m_window(window)
 {
     const std::array<const char*, 4> fontPaths = {
@@ -22,20 +22,20 @@ GUI::GUI(Game& game, sf::RenderWindow& window)
     }
 }
 
-sf::Vector2f GUI::cellTopLeft(int r, int c) const {
+sf::Vector2f GUI::cellTopLeft(int r, int c) const {//zwraca współrzędne lewego górnego rogu pola (r,c) w pikselach
     const float margin = 40.f;
     float w = static_cast<float>(m_window.getSize().x) - margin*2.f;
     float cell = w / m_game.board().size();
     return {margin + c * cell, margin + r * cell};
 }
 
-sf::Vector2f GUI::cellCenter(int r, int c) const {
+sf::Vector2f GUI::cellCenter(int r, int c) const {//zwraca współrzędne środka pola (r,c) w pikselach
     auto tl = cellTopLeft(r, c);
     float w = (static_cast<float>(m_window.getSize().x) - 80.f) / m_game.board().size();
     return {tl.x + w/2.f, tl.y + w/2.f};
 }
 
-void GUI::drawBoard() {
+void GUI::drawBoard() {//rysuje plansze
     const int n = m_game.board().size();
     const float margin = 40.f;
     float w = static_cast<float>(m_window.getSize().x) - margin*2.f;
@@ -49,7 +49,7 @@ void GUI::drawBoard() {
     sf::RectangleShape line;
     line.setFillColor(sf::Color(200,200,220));
 
-    for (int i = 1; i < n; ++i) {
+    for (int i = 1; i < n; ++i) {//rysuje linie oddzielajace pola
         // vertical
         line.setSize({2.f, w});
         line.setPosition({margin + i*cell - 1.f, margin});
@@ -71,7 +71,7 @@ void GUI::drawMarks() {//rysuje symbole
         if (cell == Cell::Empty) continue;
         auto center = cellCenter(r, c);
 
-        if (cell == Cell::X) {
+        if (cell == Cell::X) {//rysuje krzyzyk
             sf::Vertex line1[] = { sf::Vertex(), sf::Vertex() };
             line1[0].position = {center.x - w*0.3f, center.y - w*0.3f};
             line1[0].color = sf::Color::Red;
@@ -84,7 +84,7 @@ void GUI::drawMarks() {//rysuje symbole
             line2[1].color = sf::Color::Red;
             m_window.draw(line1, 2, sf::PrimitiveType::Lines);
             m_window.draw(line2, 2, sf::PrimitiveType::Lines);
-        } else {
+        } else {//rysuje kolko
             sf::CircleShape circ(w*0.28f);
             circ.setOrigin({w*0.28f, w*0.28f});
             circ.setPosition({center.x, center.y});
@@ -96,7 +96,7 @@ void GUI::drawMarks() {//rysuje symbole
     }
 }
 
-void GUI::drawHUD() {
+void GUI::drawHUD() {//rysuje informacje o aktualnym stanie gry, wyniki itp.
     sf::Text stats(m_font, "X: " + std::to_string(m_game.scoreX()) + "  O: " + std::to_string(m_game.scoreO()), 18);
     stats.setFillColor(sf::Color(200,200,220));
     stats.setPosition({20.f, static_cast<float>(m_window.getSize().y) - 40.f});
@@ -155,7 +155,7 @@ void GUI::render() {//glowna funkcja rysujaca cala plansze i HUD
 }
 
 std::pair<int,int> GUI::askHumanMove() {//nie uzywane, ruchy sa obslugiwane prze mmousetocell w main.cpp
-    // Wait for mouse click inside board and convert to cell coordinates
+    // zczytanie ruchu gracza z klikniecia myszka
     while (m_window.isOpen()) {
         while (auto ev = m_window.pollEvent()) {
             if (ev->is<sf::Event::Closed>()) m_window.close();
@@ -175,7 +175,7 @@ std::pair<int,int> GUI::askHumanMove() {//nie uzywane, ruchy sa obslugiwane prze
                 }
             }
         }
-        // small sleep to avoid busy loop
+        
         sf::sleep(sf::milliseconds(10));
     }
     return {-1, -1};
