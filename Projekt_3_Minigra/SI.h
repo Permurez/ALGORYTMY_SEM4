@@ -14,6 +14,8 @@ public:
     std::pair<int,int> bestMove(Board& board);
      // Liczba wezlow drzewa minimax odwiedzonych przy ostatnim wywolaniu bestMove
     long long nodesVisited() const { return m_nodes; }
+    // tylko do benchmarku - wywoluje minimax bezposrednio
+    long long benchmarkNodes(Board& board, int depth);
 
 private:
     using Clock = std::chrono::steady_clock;

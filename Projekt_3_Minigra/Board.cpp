@@ -1,16 +1,13 @@
 #include "Board.h"
 #include <algorithm>
 #include <cmath>
-
-// ─── Konstruktor ─────────────────────────────────────────────────────────────
-Board::Board(int size, int winLen)
+Board::Board(int size, int winLen)//rozmiar planszy, rzad do wygranej,inicjalizacja planszy i liczników
     : m_size(size)
     , m_winLen(winLen)
     , m_moveCount(0)
     , m_grid(size, std::vector<Cell>(size, Cell::Empty))
 {}
 
-// ─── Operacje na planszy ──────────────────────────────────────────────────────
 bool Board::place(int row, int col, Cell player) {//ustawia znak gracza na polu; zwraca false jesli pole zajete lub poza plansza
     if (row < 0 || row >= m_size || col < 0 || col >= m_size) return false;
     if (m_grid[row][col] != Cell::Empty) return false;
@@ -31,7 +28,7 @@ bool Board::isEmpty(int row, int col) const { return m_grid[row][col] == Cell::E
 Cell Board::get(int row, int col)     const { return m_grid[row][col]; }
 
 //Sprawdzanie wygranej 
-// Sprawdza 4 kierunki od pola (row,col): poziom, pion, ukos \, ukos /
+// Sprawdza 4 kierunki od pola (row,col): poziom, pion, ukosy
 bool Board::checkWin(int row, int col, Cell player) const {//sprawdza czy ruch na (row,col) daje wygrana dla 'gracza
     const int dr[] = {0, 1, 1,  1};
     const int dc[] = {1, 0, 1, -1};
@@ -39,10 +36,10 @@ bool Board::checkWin(int row, int col, Cell player) const {//sprawdza czy ruch n
     for (int d = 0; d < 4; ++d) {
         int count = 1;
         // Liczymy w kierunku pozytywnym
-        for (int k = 1; k < m_winLen; ++k) {
-            int r = row + dr[d]*k, c = col + dc[d]*k;
-            if (r < 0 || r >= m_size || c < 0 || c >= m_size) break;
-            if (m_grid[r][c] != player) break;
+        for (int k = 1; k < m_winLen; ++k) {//sprawdza kolejne pola w kierunku d, liczy ile jest znakow gracza
+            int r = row + dr[d]*k, c = col + dc[d]*k;//sprawdza czy pole jest w planszy i czy jest zajete przez tego samego gracza
+            if (r < 0 || r >= m_size || c < 0 || c >= m_size) break;//jesli pole jest poza plansza, przestaje liczyc w tym kierunku
+            if (m_grid[r][c] != player) break;//jesli napotka pole puste lub zajete przez innego gracza, przestaje liczyc w tym kierunku
             ++count;
         }
         // Liczymy w kierunku przeciwnym
@@ -101,18 +98,18 @@ std::optional<WinInfo> Board::getWinInfo() const {//sprawdza czy ktos wygral i z
 // count-dlugosc ciagu
 // openEnds-ile konców ciagu jest otwartych (0, 1 lub 2)
 // Wynik jest dodatni dla maximizera, ujemny dla przeciwnika, maximizerem jest SI
-int Board::evalLine(int count, int openEnds, Cell player, Cell maximizer) const {//ocenia pojedynczy ciag znakow (ilosc + otwarte konce)
+int Board::evalLine(int count, int openEnds, Cell player, Cell maximizer) const {
     if (count == 0 || openEnds == 0) return 0;
-
+//prosta heurystyka - im mniej do wygranej tym wykladniczo wiecej punktow za ten ruch
     int score = 0;
-    if      (count >= m_winLen)          score = 100000; // wygrana
-    else if (count == m_winLen - 1)      score = (openEnds == 2) ? 10000 : 1000;
-    else if (count == m_winLen - 2)      score = (openEnds == 2) ? 100   : 10;
+    if      (count >= m_winLen)          score = 100000;
+    else if (count == m_winLen - 1)      score = (openEnds == 2) ? 50000 : 10000; 
+    else if (count == m_winLen - 2)      score = (openEnds == 2) ? 5000  : 1000;  
+    else if (count == m_winLen - 3)      score = (openEnds == 2) ? 500   : 100;
     else                                 score = openEnds;
 
     return (player == maximizer) ? score : -score;
 }
-
 // Skanuje plansze we wszystkich 4 kierunkach, sumuje oceny ciagow
 int Board::heuristicScore(Cell maximizer) const {
     int total = 0;

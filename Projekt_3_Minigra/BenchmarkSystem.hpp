@@ -15,7 +15,7 @@ struct BenchmarkResult {
     long long nodes;
 };
 
-class BenchmarkSystem {
+class BenchmarkSystem {//system benchmarkowania zapisujący do CSV
 public:
     static void SaveToCSV(const std::string& filename, const std::vector<BenchmarkResult>& results) {
         std::ofstream file(filename);
@@ -26,44 +26,47 @@ public:
         std::cout << "--- Benchmark zapisany do: " << filename << " ---" << std::endl;
     }
 
-    // Benchmark na pustej planszy dla roznych rozmiarow i glebokosci
-    // repeats - liczba powtorzen dla usrednienia czasu
-    // Benchmark na planszy z jednym ruchem (X w centrum) dla roznych rozmiarow i glebokosci
-static void RunFull(const std::string& filename,
-                     const std::vector<int>& sizes = {3, 5, 7, 9},
-                     int maxDepth = 6,
-                     int repeats = 3)
-{
-    std::vector<BenchmarkResult> results;
+    static void RunFull(const std::string& filename,
+                        const std::vector<int>& sizes = {3, 5, 7, 9},
+                        int maxDepth = 6,
+                        int repeats = 3)
+    {
+        std::vector<BenchmarkResult> results;
 
-    for (int size : sizes) {
-        int winLen = std::min(size, 3);
+        for (int size : sizes) {
+            int winLen = std::min(size, 5);
 
-        for (int depth = 1; depth <= maxDepth; ++depth) {
-            double totalMs = 0.0;
-            long long nodes = 0;
+            for (int depth = 1; depth <= maxDepth; ++depth) {
+                double totalMs = 0.0;
+                long long nodes = 0;
 
-            for (int rep = 0; rep < repeats; ++rep) {
-                Board board(size, winLen);
-                board.place(size / 2, size / 2, Cell::X); // wymuszamy realne przeszukiwanie bo inaczej SI kladzie swój znak w centrum nic nie szukając
-                AI ai(Cell::O, {depth});
+                for (int rep = 0; rep < repeats; ++rep) {
+                    Board board(size, winLen);
+                    int c = size / 2;
+                    board.place(c,   c,   Cell::X);
+                    board.place(c-1, c-1, Cell::O);
+                    board.place(c+1, c,   Cell::X);
+                    board.place(c,   c+1, Cell::O);
+                    board.place(c-1, c+1, Cell::X);//wstepne ruchy aby nie zaczynac od pustej planszy
 
-                auto start = std::chrono::high_resolution_clock::now();
-                ai.bestMove(board);
-                auto end = std::chrono::high_resolution_clock::now();
+                    AI ai(Cell::O, {depth});
 
-                totalMs += std::chrono::duration<double, std::milli>(end - start).count();
-                nodes = ai.nodesVisited();
+                    auto start = std::chrono::high_resolution_clock::now();
+                    long long n = ai.benchmarkNodes(board, depth);// bezposrednie wywolwanie minmaxa
+                    auto end = std::chrono::high_resolution_clock::now();
+
+                    totalMs += std::chrono::duration<double, std::milli>(end - start).count();
+                    nodes = n;
+                }
+
+                double avgMs = totalMs / repeats;
+                results.push_back({depth, size, avgMs, nodes});//zapis
+
+                std::cout << "Size " << size << " Depth " << depth
+                          << ": " << avgMs << " ms, " << nodes << " nodes\n";
             }
-
-            double avgMs = totalMs / repeats;
-            results.push_back({depth, size, avgMs, nodes});
-
-            std::cout << "Size " << size << " Depth " << depth
-                      << ": " << avgMs << " ms, " << nodes << " nodes\n";
         }
-    }
 
-    SaveToCSV(filename, results);
-}
+        SaveToCSV(filename, results);
+    }
 };

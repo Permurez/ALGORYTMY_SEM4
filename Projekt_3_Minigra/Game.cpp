@@ -37,9 +37,11 @@ void Game::triggerAIMove() {
     if (m_aiThread.joinable())
         m_aiThread.join();
 
-    m_aiThread = std::thread([this]() {
-        auto [r, c] = m_ai->bestMove(m_board);
-        if (r >= 0 && m_board.place(r, c, m_turn))
+    Board boardCopy = m_board; // kopia planszy dla AI
+
+    m_aiThread = std::thread([this, boardCopy]() mutable {
+        auto [r, c] = m_ai->bestMove(boardCopy); // AI gra na kopii
+        if (r >= 0 && m_board.place(r, c, m_turn)) // tylko wynik na głównej planszy
             afterMove(r, c);
         m_aiThinking = false;
     });
